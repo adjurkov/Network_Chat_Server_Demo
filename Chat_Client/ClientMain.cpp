@@ -9,6 +9,9 @@
 #include <iostream>
 #include <vector>
 
+#include "cProtocolManager.h"
+#include "cBuffer.h"
+
 #pragma comment (lib, "Ws2_32.lib")
 #pragma comment (lib, "Mswsock.lib")
 #pragma comment (lib, "AdvApi32.lib")
@@ -126,6 +129,8 @@ int main(int argc, char** argv)
 
 				for (char i : userMessage)
 					std::cout << i << ' ';
+
+
 
 
 				//// the server is waiting to receive from client

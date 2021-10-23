@@ -1,1 +1,7 @@
-﻿
+﻿  cBuffer.cpp
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.cpp(28,23): warning C4244: '=': conversion from 'int16_t' to '_Ty', possible loss of data
+          with
+          [
+              _Ty=uint8_t
+          ]
+  Chat_Common.vcxproj -> E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Common.lib
