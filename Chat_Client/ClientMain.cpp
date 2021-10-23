@@ -5,6 +5,9 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <conio.h>
+#include <iostream>
+#include <vector>
 
 #pragma comment (lib, "Ws2_32.lib")
 #pragma comment (lib, "Mswsock.lib")
@@ -85,27 +88,80 @@ int main(int argc, char** argv)
 		WSACleanup();
 		return 1;
 	}
-	// the server is waiting to receive from client
-	// Step #4 Send the message to the server
-	result = send(connectSocket, sendbuf, (int)strlen(sendbuf), 0); //passing in server socket  // sending 12 bytes of data over "hello world"
-	if (result == SOCKET_ERROR)
-	{
-		printf("send failed with error: %d\n", WSAGetLastError());
-		closesocket(connectSocket);
-		WSACleanup();
-		return 1;
-	}
-	printf("Bytes Sent: %ld\n", result);
 
-	// Step #5 shutdown the connection since no more data will be sent
-	result = shutdown(connectSocket, SD_SEND);
-	if (result == SOCKET_ERROR)
+
+
+	bool quit = false;
+	bool isConnected = false;
+	std::vector<char> userMessage;
+
+	while (!quit)
 	{
-		printf("shutdown failed with error: %d\n", WSAGetLastError());
-		closesocket(connectSocket);
-		WSACleanup();
-		return 1;
+		// Key was hit
+		if (_kbhit())
+		{
+			char key = _getch();
+
+			// Escape key pressed
+			if (key == 27)
+			{
+				quit = true;
+			}
+
+			// Backspace key pressed
+			else if (key == 8)
+			{
+				// Erase character from screen
+				printf("%c", key);
+				printf(" ");
+				printf("%c", key);
+
+				// Pop character from vector
+				userMessage.pop_back();
+			}
+
+			// Enter key pressed
+			else if (key == 13)
+			{
+
+				for (char i : userMessage)
+					std::cout << i << ' ';
+
+
+				//// the server is waiting to receive from client
+				//// Step #4 Send the message to the server
+				//result = send(connectSocket, sendbuf, (int)strlen(sendbuf), 0); //passing in server socket  // sending 12 bytes of data over "hello world"
+				//if (result == SOCKET_ERROR)
+				//{
+				//	printf("send failed with error: %d\n", WSAGetLastError());
+				//	closesocket(connectSocket);
+				//	WSACleanup();
+				//	return 1;
+				//}
+				//printf("Bytes Sent: %ld\n", result);
+
+				//// Step #5 shutdown the connection since no more data will be sent
+				//result = shutdown(connectSocket, SD_SEND);
+				//if (result == SOCKET_ERROR)
+				//{
+				//	printf("shutdown failed with error: %d\n", WSAGetLastError());
+				//	closesocket(connectSocket);
+				//	WSACleanup();
+				//	return 1;
+				//}
+			}
+			else
+			{
+				printf("%c", key);
+				userMessage.push_back(key);
+			}
+
+
+
+
+		}
 	}
+	
 
 	// Step #6 Receive until the peer closes the connection
 	do {
