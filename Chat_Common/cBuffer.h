@@ -5,7 +5,11 @@
 #include <cstdlib>
 #include <stdint.h>
 
-class cBuffer
+
+// Compiled as a dynamic library
+#define DLLExport __declspec ( dllexport )
+
+class DLLExport cBuffer
 {
 public:
 

@@ -1,10 +1,9 @@
 ﻿  cBuffer.cpp
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13,30): warning C4251: 'cBuffer::_buffer': class 'std::vector<uint8_t,std::allocator<uint8_t>>' needs to have dll-interface to be used by clients of class 'cBuffer'
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13): message : see declaration of 'std::vector<uint8_t,std::allocator<uint8_t>>'
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.cpp(28,23): warning C4244: '=': conversion from 'int16_t' to '_Ty', possible loss of data
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(16,27): warning C4251: 'cBuffer::_buffer': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'cBuffer'
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(16): message : see declaration of 'std::vector<char,std::allocator<char>>'
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.cpp(25,23): warning C4244: '=': conversion from 'int16_t' to '_Ty', possible loss of data
           with
           [
-              _Ty=uint8_t
+              _Ty=char
           ]
-     Creating library E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Common.lib and object E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Common.exp
   Chat_Common.vcxproj -> E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Common.dll

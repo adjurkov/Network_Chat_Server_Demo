@@ -49,11 +49,11 @@ void RemoveClient(int index)
 {
 	//client1.buffer.
 
-	clientVector.erase(clientVector.begin() + index);
+	clientSockets.erase(clientSockets.begin() + index);
 	//ClientInfo* client = ClientArray[index];
 
-	closesocket(clientVector.at(index).socket);
-	printf("Closing socket %d\n", (int)clientVector.at(index).socket);
+	closesocket(clientSockets.at(index)->socket);
+	printf("Closing socket %d\n", (int)clientSockets.at(index)->socket);
 
 	//for (int clientIndex = index; clientIndex < TotalClients; clientIndex++)
 	//{

@@ -20,7 +20,7 @@
 //#define DEFAULT_PORT "27015"					// The default port to use
 #define DEFAULT_PORT "5150"	
 #define SERVER "127.0.0.1"						// The IP of our server  /using home address for example using a server and client on the same computer
-cProtocolManager packet;
+sPacket packet;
 
 
 int main(int argc, char** argv)
@@ -99,6 +99,10 @@ int main(int argc, char** argv)
 	bool quit = false;
 	bool isConnected = false;
 	std::vector<char> userInput;
+	std::vector<char> userMessage;
+	cBuffer buffer(500);
+	sPacket packet;
+	bool nameIsSet = false;
 
 	while (!quit)
 	{
@@ -128,21 +132,142 @@ int main(int argc, char** argv)
 			// Enter key pressed
 			else if (key == 13)
 			{
-				std::vector<char> userMessage;
-				for (char i : userInput)
+				printf("\n");
+				int messageStartIndex = 0;
+				std::string messageType;
+
+				// Did user enter command (beginning with / )?
+				if (userMessage.at(0) == '/')
 				{
-					// If "/name" is entered, store username 
+					// Get command name
+					for (int i = 0; i < userMessage.size(); i++)
+					{
+						// Read until we hit whitespace
+						while (userMessage.at(i) != ' ')
+						{
+							// Storing message type (join, leave, name, broadcast)
+							messageType += userMessage.at(i);
+							i++;
+							messageStartIndex++;
+						}
 
+						if (messageType == "/name")
+						{
+							// Get username
+							std::string msg;
+							for (int i = messageStartIndex + 1; i < userMessage.size(); i++)
+								msg += userMessage.at(i);
 
-					// If "/join" is entered, store roomname
+							packet.header.packetLength = 4 + 4 + 4 + msg.length(); // 4-int, 4-enum, 4-int, msg length
+							packet.header.msgID = SetName;
+							packet.usernameLength = msg.length();
+							packet.username = msg;
 
-					// 
+							// Growing the buffer just enough to deal with packet
+							int newBufferSize = packet.header.packetLength + 1;
+							buffer._buffer.resize(newBufferSize);
 
+							// Serialize
+							buffer.writeIntBE(packet.header.packetLength);
+							buffer.writeIntBE(packet.header.msgID);
+							buffer.writeIntBE(packet.usernameLength);
+							buffer.writeString(packet.username);
+
+							nameIsSet = true;
+							break;
+						}
+						else if (messageType == "/join")
+						{
+							// Get room name
+							std::string msg;
+							for (int i = messageStartIndex + 1; i < userMessage.size(); i++)
+								msg += userMessage.at(i);
+
+							packet.header.packetLength = 4 + 4 + 4 + msg.length(); // 4-int, 4-enum, 4-int, msg length
+							packet.header.msgID = JoinRoom;
+							packet.roomLength = msg.length();
+							packet.roomname = msg;
+
+							// Growing the buffer just enough to deal with packet
+							int newBufferSize = packet.header.packetLength + 1;
+							buffer._buffer.resize(newBufferSize);
+
+							// Serialize
+							buffer.writeIntBE(packet.header.packetLength);
+							buffer.writeIntBE(packet.header.msgID);
+							buffer.writeIntBE(packet.roomLength);
+							buffer.writeString(packet.roomname);
+							break;
+						}
+						else if (messageType == "/leave")
+						{
+							// Get room name
+							std::string msg;
+							for (int i = messageStartIndex + 1; i < userMessage.size(); i++)
+								msg += userMessage.at(i);
+
+							packet.header.packetLength = 4 + 4 + 4 + msg.length(); // 4-int, 4-enum, 4-int, msg length
+							packet.header.msgID = LeaveRoom;
+							packet.roomLength = msg.length();
+							packet.roomname = msg;
+
+							// Growing the buffer just enough to deal with packet
+							int newBufferSize = packet.header.packetLength + 1;
+							buffer._buffer.resize(newBufferSize);
+
+							// Serialize
+							buffer.writeIntBE(packet.header.packetLength);
+							buffer.writeIntBE(packet.header.msgID);
+							buffer.writeIntBE(packet.roomLength);
+							buffer.writeString(packet.roomname);
+							break;
+						}
+						else
+						{
+							printf("Command not recognized.");
+							break;
+						}
+					}
 				}
+				else
+				{
+					// Get message
+					std::string msg;
+					for (int i = 0; i < userMessage.size(); i++)
+						msg += userMessage.at(i);
+
+					packet.header.packetLength = 4 + 4 + 4 + packet.roomname.length() + 4 + msg.length();
+					packet.header.msgID = Broadcast;
+					packet.msg = msg;
+					packet.msgLength = msg.length();
+
+					// Growing the buffer just enough to deal with packet
+					int newBufferSize = packet.header.packetLength + 1;
+					buffer._buffer.resize(newBufferSize);
+
+					// Serialize
+					buffer.writeIntBE(packet.header.packetLength);
+					buffer.writeIntBE(packet.header.msgID);
+					buffer.writeIntBE(packet.roomLength);
+					buffer.writeString(packet.roomname);
+					buffer.writeIntBE(packet.msgLength);
+					buffer.writeString(packet.msg);
+				}
+				userMessage.clear();
+
+
+				//std::cout << "packet length:" << buffer.readIntBE() << std::endl;
+				//std::cout << "packet ID:" << buffer.readIntBE() << std::endl;
+				//std::cout << "size of room:" << buffer.readIntBE() << std::endl;
+				//std::cout << "roomname:" << buffer.readString() << std::endl;
+				//std::cout << "size of msg:" << buffer.readIntBE() << std::endl;
+				//std::cout << "msg:" << buffer.readString() << std::endl;
+
+				buffer._buffer.clear();
+				buffer.readIndex = 0;
+				buffer.writeIndex = 0;
+
 					
-
-				
-
 
 				//// the server is waiting to receive from client
 				//// Step #4 Send the message to the server
@@ -171,9 +296,24 @@ int main(int argc, char** argv)
 				printf("%c", key);
 				userMessage.push_back(key);
 			}
+		}
 
-
-
+		if (isConnected)
+		{
+			// check recv
+			// int result = recv(...);
+			// if(result == SOCKETERROR) // since we're setting to be non-blockin on purpose, its not an error
+			//{
+			//	if (WSAGetLastError() == 10035)
+			//	{
+			//		// ignore this error
+			//	}
+			//	else
+			//	{
+			//		// tell the user there was an error
+			//		// shutdown properly
+			//	}
+			//}
 
 		}
 	}

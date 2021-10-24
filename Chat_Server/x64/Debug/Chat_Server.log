@@ -1,6 +1,7 @@
 ﻿  ServerMain.cpp
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13,30): warning C4251: 'cBuffer::_buffer': class 'std::vector<uint8_t,std::allocator<uint8_t>>' needs to have dll-interface to be used by clients of class 'cBuffer'
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13): message : see declaration of 'std::vector<uint8_t,std::allocator<uint8_t>>'
-E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Server\ServerMain.cpp(170,8): warning C4101: 'flags': unreferenced local variable
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(16,27): warning C4251: 'cBuffer::_buffer': class 'std::vector<char,std::allocator<char>>' needs to have dll-interface to be used by clients of class 'cBuffer'
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(16): message : see declaration of 'std::vector<char,std::allocator<char>>'
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Server\ServerMain.cpp(296,57): warning C4267: '=': conversion from 'size_t' to 'ULONG', possible loss of data
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Server\ServerMain.cpp(181,8): warning C4101: 'flags': unreferenced local variable
      Creating library E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Server.lib and object E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Server.exp
   Chat_Server.vcxproj -> E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Server.exe
