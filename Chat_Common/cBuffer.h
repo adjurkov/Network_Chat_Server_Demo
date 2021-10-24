@@ -14,12 +14,14 @@ class DLLExport cBuffer
 public:
 
 	std::vector<char> _buffer;
+	//char* charBuffer;
 	int writeIndex;
 	int readIndex;
 
 	cBuffer();
 	cBuffer(size_t size);
 	cBuffer(std::vector<char> buffer);
+	
 
 	void writeIntBE(std::size_t index, int32_t value);
 	void writeIntBE(int32_t value);

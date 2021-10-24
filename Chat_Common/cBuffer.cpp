@@ -4,11 +4,14 @@ cBuffer::cBuffer()
 {
 	writeIndex = 0;
 	readIndex = 0;
+	_buffer.resize(500);
+	//charBuffer = &_buffer[0];
 }
 
 cBuffer::cBuffer(size_t size)
 {
 	_buffer.resize(size);
+	//charBuffer = &_buffer[0];
 	writeIndex = 0;
 	readIndex = 0;
 }
@@ -16,6 +19,7 @@ cBuffer::cBuffer(size_t size)
 cBuffer::cBuffer(std::vector<char> buffer)
 {
 	_buffer = buffer;
+	//charBuffer = &_buffer[0];
 	writeIndex = 0;
 	readIndex = 0;
 }

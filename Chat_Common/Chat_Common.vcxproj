@@ -140,7 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="cBuffer.h" />
-    <ClInclude Include="cProtocolManager.h" />
+    <ClInclude Include="ProtocolManager.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cBuffer.cpp" />

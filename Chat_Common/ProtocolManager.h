@@ -11,6 +11,9 @@ enum
 	LeaveRoom = 2,
 	SetName = 3,
 	Broadcast = 4,
+
+	// Server
+	AcceptedUsername = 5,
 };
 
 struct DLLExport sPacket

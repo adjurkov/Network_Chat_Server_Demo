@@ -9,7 +9,7 @@
 #include <iostream>
 #include <vector>
 
-#include "cProtocolManager.h"
+#include "ProtocolManager.h"
 #include "cBuffer.h"
 
 #pragma comment (lib, "Ws2_32.lib")
@@ -255,31 +255,18 @@ int main(int argc, char** argv)
 				}
 				userMessage.clear();
 
-
-				//std::cout << "packet length:" << buffer.readIntBE() << std::endl;
-				//std::cout << "packet ID:" << buffer.readIntBE() << std::endl;
-				//std::cout << "size of room:" << buffer.readIntBE() << std::endl;
-				//std::cout << "roomname:" << buffer.readString() << std::endl;
-				//std::cout << "size of msg:" << buffer.readIntBE() << std::endl;
-				//std::cout << "msg:" << buffer.readString() << std::endl;
-
-				buffer._buffer.clear();
-				buffer.readIndex = 0;
-				buffer.writeIndex = 0;
-
-					
-
-				//// the server is waiting to receive from client
-				//// Step #4 Send the message to the server
-				//result = send(connectSocket, sendbuf, (int)strlen(sendbuf), 0); //passing in server socket  // sending 12 bytes of data over "hello world"
-				//if (result == SOCKET_ERROR)
-				//{
-				//	printf("send failed with error: %d\n", WSAGetLastError());
-				//	closesocket(connectSocket);
-				//	WSACleanup();
-				//	return 1;
-				//}
-				//printf("Bytes Sent: %ld\n", result);
+				// the server is waiting to receive from client
+				// Step #4 Send the message to the server
+				result = send(connectSocket, buffer._buffer.data(), buffer._buffer.size(), 0); //passing in server socket  // sending 12 bytes of data over "hello world"
+				if (result == SOCKET_ERROR)
+				{
+					printf("send failed with error: %d\n", WSAGetLastError());
+					closesocket(connectSocket);
+					WSACleanup();
+					return 1;
+				}
+				printf("Bytes Sent: %ld\n", result);
+				isConnected = true;
 
 				//// Step #5 shutdown the connection since no more data will be sent
 				//result = shutdown(connectSocket, SD_SEND);
@@ -290,6 +277,10 @@ int main(int argc, char** argv)
 				//	WSACleanup();
 				//	return 1;
 				//}
+		/*		buffer._buffer.clear();
+				buffer.readIndex = 0;
+				buffer.writeIndex = 0;*/
+	
 			}
 			else
 			{
@@ -300,6 +291,45 @@ int main(int argc, char** argv)
 
 		if (isConnected)
 		{
+			isConnected = false;
+			// Step #6 Receive until the peer closes the connection
+			do {
+				printf("CONNECTED\n");
+
+
+				buffer._buffer.resize(500);
+				result = recv(connectSocket, buffer._buffer.data(), buffer._buffer.size(), 0);
+				if (result > 0) // echo   
+				{
+					printf("Bytes received: %d\n", result);
+
+					int packetLength = buffer.readIntBE();
+					packetLength += 1;
+					buffer._buffer.resize(packetLength);
+
+					int msgID = buffer.readIntBE();
+					int msgLength = buffer.readIntBE();
+					std::string message = buffer.readString();
+
+					printf("packetlength: %d\n", packetLength);
+					printf("msgID: %d\n", msgID);
+					printf("msgLength: %d\n", msgLength);
+					printf("%s", message.c_str());
+					//std::cout << message << std::endl;
+
+					//printf("Message: %s\n", &recvbuf);
+				}
+				else if (result == 0)
+				{
+					printf("Connection closed\n");
+				}
+				else
+				{
+					printf("recv failed with error: %d\n", WSAGetLastError());
+				}
+
+
+			} while (result > 0);
 			// check recv
 			// int result = recv(...);
 			// if(result == SOCKETERROR) // since we're setting to be non-blockin on purpose, its not an error
@@ -319,25 +349,25 @@ int main(int argc, char** argv)
 	}
 	
 
-	// Step #6 Receive until the peer closes the connection
-	do {
+	//// Step #6 Receive until the peer closes the connection
+	//do {
 
-		result = recv(connectSocket, recvbuf, recvbuflen, 0);
-		if (result > 0) // echo   
-		{
-			printf("Bytes received: %d\n", result);
-			printf("Message: %s\n", &recvbuf);
-		}
-		else if (result == 0)
-		{
-			printf("Connection closed\n");
-		}
-		else
-		{
-			printf("recv failed with error: %d\n", WSAGetLastError());
-		}
+	//	result = recv(connectSocket, recvbuf, recvbuflen, 0);
+	//	if (result > 0) // echo   
+	//	{
+	//		printf("Bytes received: %d\n", result);
+	//		printf("Message: %s\n", &recvbuf);
+	//	}
+	//	else if (result == 0)
+	//	{
+	//		printf("Connection closed\n");
+	//	}
+	//	else
+	//	{
+	//		printf("recv failed with error: %d\n", WSAGetLastError());
+	//	}
 
-	} while (result > 0);
+	//} while (result > 0);
 
 	// Step #7 cleanup
 	closesocket(connectSocket);

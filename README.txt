@@ -102,12 +102,28 @@ Protocol:
 
 [1 mark] Must be binary.
 
-- 
+- Anything sent over the network is serialized/deserialized before using it.
+- See cBuffer.cpp for implementation.
+- See ProtocolManager.h for packet information.
+
 
 [2 marks] Must use length prefix message framing.
 
--
+The following is a list of the packet structures I used that correspond to the enum values 
+inside ProtocolManager.h:
+
+Header
+[packet_length][message_id]
+
+Broadcast
+[header][length][room_name][length][message]
+
+Receive Message
+
+
+
+
 
 [1 mark] Big Endian must be used for the protocol.
 
--
+- As seen inside cBuffer.cpp, big endian was implemented.
