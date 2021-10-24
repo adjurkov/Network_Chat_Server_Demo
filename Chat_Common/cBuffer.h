@@ -1,19 +1,21 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <cstdlib>
 #include <stdint.h>
 
 class cBuffer
 {
 public:
-	std::vector<uint8_t> _buffer;
+
+	std::vector<char> _buffer;
 	int writeIndex;
 	int readIndex;
 
 	cBuffer();
 	cBuffer(size_t size);
-	cBuffer(std::vector<uint8_t> buffer);
+	cBuffer(std::vector<char> buffer);
 
 	void writeIntBE(std::size_t index, int32_t value);
 	void writeIntBE(int32_t value);
@@ -25,13 +27,10 @@ public:
 	int16_t readShortBE(std::size_t index);
 	int16_t readShortBE();
 
-	void writeString(std::size_t index, std::vector<uint8_t> value);
-	void writeString(std::vector<uint8_t> value);
-	std::vector<uint8_t> readString(std::size_t index);
-	std::vector<uint8_t> readString();
+	void writeString(std::size_t index, std::string value);
+	void writeString(std::string value);
+	std::string readString(std::size_t index);
+	std::string readString();
 };
-
-
-
 
 

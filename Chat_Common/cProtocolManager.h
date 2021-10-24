@@ -21,39 +21,48 @@ class DLLExport cProtocolManager
 		int message_id;
 	};
 
-	struct sJoinRoomMessage
-	{
-		sHeader header;
-		int room_length;
-		std::string room_name;
-	};
+	sHeader header;
+	int username_length;
+	std::string username;
+	int room_length;
+	std::string room_name;
+	int user_message_length;
+	std::string user_message;
 
-	struct sLeaveRoomMessage
-	{
-		sHeader header;
-		int room_length;
-		std::string room_name;
-	};
 
-	struct sSendMessage
-	{
-		sHeader header;
-		int room_length;
-		std::string room_name;
-		int user_message_length;
-		std::string user_message;
-	};
+	//struct sJoinRoomMessage
+	//{
+	//	sHeader header;
+	//	int room_length;
+	//	std::string room_name;
+	//};
 
-	struct sReceiveMessage
-	{
-		sHeader header;
-		int username_length;
-		std::string username;
-		int user_message_length;
-		std::string user_message;
-		int room_length;
-		std::string room_name;
-	};
+	//struct sLeaveRoomMessage
+	//{
+	//	sHeader header;
+	//	int room_length;
+	//	std::string room_name;
+	//};
+
+	//struct sSendMessage
+	//{
+	//	sHeader header;
+	//	int room_length;
+	//	std::string room_name;
+	//	int user_message_length;
+	//	std::string user_message;
+	//};
+
+	//struct sReceiveMessage
+	//{
+	//	sHeader header;
+	//	int username_length;
+	//	std::string username;
+	//	int user_message_length;
+	//	std::string user_message;
+	//	int room_length;
+	//	std::string room_name;
+	//};
 };
 
 

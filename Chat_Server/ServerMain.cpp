@@ -6,7 +6,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string>
+#include <map>
 #include <iostream>
+#include "cBuffer.h"
 
 #pragma comment (lib, "Ws2_32.lib")
 
@@ -19,23 +21,44 @@ struct ClientInfo {
 
 	// Buffer information (this is basically your buffer class)
 	WSABUF dataBuf;
-	char buffer[DEFAULT_BUFLEN];
+	//char buffer[DEFAULT_BUFLEN];
+	/*std::vector<char> buffer;*/
+
+	cBuffer* buffer;
+
+	
 	int bytesRECV;
 };
 
 int TotalClients = 0;
-ClientInfo* ClientArray[FD_SETSIZE];
+//ClientInfo* ClientArray[FD_SETSIZE];
+std::vector<ClientInfo*> clientSockets;
+// map[string roomname][vector of client info]
+std::map<std::string, std::vector<ClientInfo*>> clientsInRooms;
+
+int packetLength;
+int msgID;
+int roomLength;
+std::string roomname;
+int userMsgLength;
+std::string userMsgName;
+int usernameLength;
+std::string username;
 
 void RemoveClient(int index)
 {
-	ClientInfo* client = ClientArray[index];
-	closesocket(client->socket);
-	printf("Closing socket %d\n", (int)client->socket);
+	//client1.buffer.
 
-	for (int clientIndex = index; clientIndex < TotalClients; clientIndex++)
-	{
-		ClientArray[clientIndex] = ClientArray[clientIndex + 1];
-	}
+	clientVector.erase(clientVector.begin() + index);
+	//ClientInfo* client = ClientArray[index];
+
+	closesocket(clientVector.at(index).socket);
+	printf("Closing socket %d\n", (int)clientVector.at(index).socket);
+
+	//for (int clientIndex = index; clientIndex < TotalClients; clientIndex++)
+	//{
+	//	ClientArray[clientIndex] = ClientArray[clientIndex + 1];
+	//}
 
 	TotalClients--;
 
@@ -58,7 +81,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		printf("WSAStartup() was successful!\n");
+		printf("Winsock initialization was successful!\n");
 	}
 
 	// #1 Socket
@@ -135,7 +158,7 @@ int main(int argc, char** argv)
 	}
 	else
 	{
-		printf("listen() was successful!\n");
+		printf("Listening for connections...\n");
 	}
 	// we wanna be able to accept multiple clients
 	// Change the socket mode on the listening socket from blocking to
@@ -173,9 +196,23 @@ int main(int argc, char** argv)
 
 		// every connected client we have, we're gonna add to the readset as well
 		// Set read notification for each socket.
-		for (int i = 0; i < TotalClients; i++)
+		
+		// Adding all the client sockets to the readset for each room
+	/*	for (std::map<std::string, std::vector<ClientInfo*>>::iterator iter = clientsInRooms.begin(); iter != clientsInRooms.end(); ++iter)
 		{
-			FD_SET(ClientArray[i]->socket, &ReadSet);
+			std::string room = iter->first;
+			std::vector<ClientInfo*> clientInfo = iter->second;*/
+
+			//for (int i = 0; i < TotalClients; i++)
+		
+		/*}*/
+
+		// Adding all the client sockets to the readset for each room
+		for (std::vector<ClientInfo*>::iterator iter = clientSockets.begin(); iter != clientSockets.end(); ++iter)
+		{
+			FD_SET((*iter)->socket, &ReadSet);
+			/*FD_SET(ClientArray[i]->socket, &ReadSet);*/
+			/*FD_SET(clientVector.at(i)->socket, &ReadSet);*/
 		}
 
 		// Call our select function to find the sockets that
@@ -214,11 +251,18 @@ int main(int argc, char** argv)
 				{
 					printf("ioctlsocket() success!\n");
 
-
+					
 					ClientInfo* info = new ClientInfo(); // add as client
+					//ClientInfo info;
 					info->socket = acceptSocket; // storing new socket as accept socket
 					info->bytesRECV = 0; // the write index
-					ClientArray[TotalClients] = info; // num of clients we can store
+
+					std::string serverLobby = "serverLobby";
+					//std::vector<ClientInfo*> clientVec = clientsInRooms[serverLobby];
+					
+					clientSockets.push_back(info);
+
+					//ClientArray[TotalClients] = info; // num of clients we can store
 					TotalClients++;
 					printf("New client connected on socket %d\n", (int)acceptSocket);
 				}
@@ -234,11 +278,12 @@ int main(int argc, char** argv)
 
 		// so for each of our connected clients, 
 		// #5 recv & send
-		for (int i = 0; i < TotalClients; i++)
+		for (int i = 0; i < clientSockets.size(); i++)
 		{
-			ClientInfo* client = ClientArray[i];
+			//ClientInfo* client = ClientArray[i];
+			ClientInfo* client = clientSockets.at(i);
 
-			// check if the socket is set withing the readset
+			// check if the socket is set within the readset
 
 			// If the ReadSet is marked for this socket, then this means data
 			// is available to be read on the socket
@@ -246,11 +291,15 @@ int main(int argc, char** argv)
 			{
 				// if it is set, we can read the data from that socket
 				total--;
-				client->dataBuf.buf = client->buffer;
-				client->dataBuf.len = DEFAULT_BUFLEN;
+
+				client->dataBuf.buf = client->buffer->_buffer.data();
+				client->dataBuf.len = client->buffer->_buffer.size();
+
+			/*	client->dataBuf.buf = &client->buffer;
+				client->dataBuf.len = DEFAULT_BUFLEN;*/
 
 				DWORD Flags = 0;
-				result = WSARecv( // call a receive call (alternative to just calling receive)
+				result = WSARecv( // WSARecv() - call a receive call (alternative to just calling receive)
 					client->socket,
 					&(client->dataBuf),
 					1,
@@ -260,19 +309,13 @@ int main(int argc, char** argv)
 					NULL
 				);
 
-
 				// once we recieve the data we can do our deserialization
 				std::string received(client->dataBuf.buf);
-				// buffer.WriteString(received);
-				// packetLength = buffer.ReadUInt32LE();
+				/*buffer.WriteString(received);*/
+				packetLength = client->buffer->readIntBE();
 
-				int value = 0;
-				value |= client->dataBuf.buf[0] << 24;
-				value |= client->dataBuf.buf[1] << 16;
-				value |= client->dataBuf.buf[2] << 8;
-				value |= client->dataBuf.buf[3];
 
-				printf("The value received is: %d\n", value);
+				//printf("The value received is: %d\n", value);
 
 				std::cout << "RECVd: " << received << std::endl;
 

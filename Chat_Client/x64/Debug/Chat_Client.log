@@ -1,3 +1,5 @@
 ﻿  ClientMain.cpp
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13,30): warning C4251: 'cBuffer::_buffer': class 'std::vector<uint8_t,std::allocator<uint8_t>>' needs to have dll-interface to be used by clients of class 'cBuffer'
+E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\Chat_Common\cBuffer.h(13): message : see declaration of 'std::vector<uint8_t,std::allocator<uint8_t>>'
      Creating library E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Client.lib and object E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Client.exp
   Chat_Client.vcxproj -> E:\Fanshawe\Fall_Term\INFO_6016_Network_Programming\Projects\INFO-6016_Project1_AnaDjurkovic\x64\Debug\Chat_Client.exe

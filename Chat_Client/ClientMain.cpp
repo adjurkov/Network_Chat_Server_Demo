@@ -20,6 +20,8 @@
 //#define DEFAULT_PORT "27015"					// The default port to use
 #define DEFAULT_PORT "5150"	
 #define SERVER "127.0.0.1"						// The IP of our server  /using home address for example using a server and client on the same computer
+cProtocolManager packet;
+
 
 int main(int argc, char** argv)
 {
@@ -96,7 +98,7 @@ int main(int argc, char** argv)
 
 	bool quit = false;
 	bool isConnected = false;
-	std::vector<char> userMessage;
+	std::vector<char> userInput;
 
 	while (!quit)
 	{
@@ -120,17 +122,26 @@ int main(int argc, char** argv)
 				printf("%c", key);
 
 				// Pop character from vector
-				userMessage.pop_back();
+				userInput.pop_back();
 			}
 
 			// Enter key pressed
 			else if (key == 13)
 			{
+				std::vector<char> userMessage;
+				for (char i : userInput)
+				{
+					// If "/name" is entered, store username 
 
-				for (char i : userMessage)
-					std::cout << i << ' ';
 
+					// If "/join" is entered, store roomname
 
+					// 
+
+				}
+					
+
+				
 
 
 				//// the server is waiting to receive from client
