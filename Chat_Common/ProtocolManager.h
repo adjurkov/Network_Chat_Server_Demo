@@ -1,9 +1,13 @@
 #pragma once
 #include <string>
+#include <vector>
+#include "cBuffer.h"
 
 // Compiled as a dynamic library
 #define DLLExport __declspec ( dllexport )
 
+
+// Message ID Types
 enum
 {
 	// Client
@@ -16,38 +20,30 @@ enum
 	AcceptedUsername = 5,
 };
 
+// Protocol Manager
 struct DLLExport sPacket
 {
-
+	// Packet Header
 	struct sHeader
 	{
 		int packetLength;
 		int msgID;
 	};
 
+	// Packet Contents
 	sHeader header;
-
 	int roomLength;
 	std::string roomname;
-
 	int usernameLength;
 	std::string username;
-
 	int msgLength;
 	std::string msg;
 
-	sPacket()
-	{
-		header.msgID = 4;
-		header.packetLength = 0;
-		roomLength = 0;
-		roomname = " ";
-		usernameLength = 0;
-		username = " ";
-		msgLength = 0;
-		msg = " ";
-	}
+	// Default Constructor
+	sPacket();
 
+	// Serialize a packet given one of the user commands (/name, /join, /leave, or plain message)
+	void SerializeUserCommand(sPacket& packet, std::vector<char> &userMessage, cBuffer& buffer);
 };
 
 

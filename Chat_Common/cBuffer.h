@@ -35,7 +35,7 @@ public:
 
 	void writeString(std::size_t index, std::string value);
 	void writeString(std::string value);
-	std::string readString(std::size_t index);
+	std::string readString(std::size_t lengthOfString);
 	std::string readString();
 };
 

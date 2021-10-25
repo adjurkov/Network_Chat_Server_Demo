@@ -246,7 +246,7 @@ int main(int argc, char** argv)
 					info->socket = acceptSocket; // storing new socket as accept socket
 					info->bytesRECV = 0; // the write index
 					info->buffer = new cBuffer;
-					//info->buffer->_buffer.resize(1000);
+					info->buffer->_buffer.resize(500);
 
 					/*std::string serverLobby = "ServerLobby";*/
 					//std::vector<ClientInfo*> clientVec = clientsInRooms[serverLobby];
@@ -257,15 +257,6 @@ int main(int argc, char** argv)
 				}
 			}
 		}
-
-		// after we're done accepting our new client, we can go through all our currently connected
-		// clients and we're gonna see if any of them are inside the readset, if they are, we can 
-		// call a recieve command from them
-
-		// since receive is a blocking call, if we know we have data ready to read on those sockets, 
-		// that it wont be blocking waiting for data to come
-
-		// so for each of our connected clients, 
 
 //----------------------------------------   Recv and Send   ------------------------------------------------
 			for (int i = 0; i < clientSockets.size(); i++)
@@ -294,93 +285,82 @@ int main(int argc, char** argv)
 						NULL,
 						NULL
 					);
-
-					if (result == 0)
-					{
-						std::cout << " no error occurs and the receive operation has completed immediately" << std::endl;
-
-					}
+					// Result > 0 we receive data, if 0 connection lost
 					if (result == SOCKET_ERROR)
 					{
-						printf("send failed with error: %d\n", WSAGetLastError());
-					}
-
-					// once we recieve the data we can do our deserialization
-				//	std::string received(client->dataBuf.buf);
-				//	std::cout << "RECVd: " << received << std::endl;
-
-					//client->buffer->writeString(received);
-					memcpy(client->buffer->_buffer.data(), client->dataBuf.buf, client->dataBuf.len);
-
-	/*				(char*)client->buffer->_buffer.data() = client->dataBuf.buf;
-					client->buffer->_buffer.resize(client->dataBuf.len);*/
-
-					packetLength = client->buffer->readIntBE();
-					msgID = client->buffer->readIntBE();
-
-				/*	packetLength = client->buffer->readIntBE();
-					msgID = client->buffer->readIntBE();*/
-
-
-					switch (msgID)
-					{
-//*************************************  MsgID: SETNAME  *********************************************
-					case SetName:
-					{
-						// Read in the rest of the packet, store username
-						packet.usernameLength = client->buffer->readIntBE();
-						packet.username = client->buffer->readString();
-						client->username = packet.username;
-
-						// Preparing msg back to server
-						packet.msg = "SERVER: Welcome, " + client->username + "!";
-						packet.msgLength = packet.msg.length();
-						packetLength = 4 + 4 + 4 + packet.msgLength;
-						packet.header.packetLength = packetLength;
-						packet.header.msgID = AcceptedUsername;
-
-						// Clear the buffer
-						client->buffer->_buffer.clear();
-						client->buffer->readIndex = 0;
-						client->buffer->writeIndex = 0;
-
-						// Growing the buffer just enough to deal with packet
-						int newBufferSize = packet.header.packetLength + 1;
-						client->buffer->_buffer.resize(newBufferSize);
-
-						// Serialize
-						client->buffer->writeIntBE(packet.header.packetLength);
-						client->buffer->writeIntBE(packet.header.msgID);
-						client->buffer->writeIntBE(packet.msgLength);
-						client->buffer->writeString(packet.msg);
-
-						// Result > 0 we receive data, if 0 connection lost, 
-						if (result == SOCKET_ERROR)
+						if (WSAGetLastError() == WSAEWOULDBLOCK) {}
+						else
 						{
-							if (WSAGetLastError() == WSAEWOULDBLOCK) {}
-							else
-							{
-								printf("WSARecv failed on socket %d with error: %d\n", (int)client->socket, WSAGetLastError());
-								RemoveClient(i);
-							}
+							printf("WSARecv failed on socket %d with error: %d\n", (int)client->socket, WSAGetLastError());
+							RemoveClient(i);
+						}
+					}
+					else // RecvBytes > 0, we got data
+					{
+						printf("WSARecv() is OK!\n");
+						if (RecvBytes == 0)
+						{
+							RemoveClient(i);
+						}
+						else if (RecvBytes == SOCKET_ERROR)
+						{
+							printf("recv: There was an error..%d\n", WSAGetLastError());
+							continue;
 						}
 						else
 						{
-							printf("WSARecv() is OK!\n");
-							if (RecvBytes == 0)
+							// once we recieve the data we can do our deserialization
+						/*	std::string received(client->dataBuf.buf);
+							std::cout << "RECVd: " << received << std::endl;*/
+							//client->buffer->writeString(received);
+							memcpy(client->buffer->_buffer.data(), client->dataBuf.buf, client->dataBuf.len);
+
+			/*				(char*)client->buffer->_buffer.data() = client->dataBuf.buf;
+							client->buffer->_buffer.resize(client->dataBuf.len);*/
+
+							packetLength = client->buffer->readIntBE();
+							msgID = client->buffer->readIntBE();
+
+
+							switch (msgID)
 							{
-								RemoveClient(i);
-							}
-							else if (RecvBytes == SOCKET_ERROR)
+
+								//***************************************  MESSAGE ID: SET NAME  ************************************************
+
+							case SetName:
 							{
-								printf("recv: There was an error..%d\n", WSAGetLastError());
-								continue;
-							}
-							else
-							{
+								// Read in the rest of the packet, store username
+								packet.usernameLength = client->buffer->readIntBE();
+								packet.username = client->buffer->readString(packet.usernameLength);
+								client->username = packet.username;
+
+								// Preparing msg back to server
+								packet.msg = "SERVER: Welcome, " + client->username + "!";
+								packet.msgLength = packet.msg.length();
+								packetLength = 4 + 4 + 4 + packet.msgLength;
+								packet.header.packetLength = packetLength;
+								packet.header.msgID = AcceptedUsername;
+
+								// Clear the buffer
+								client->buffer->_buffer.clear();
+								client->buffer->readIndex = 0;
+								client->buffer->writeIndex = 0;
+
+								// Growing the buffer just enough to deal with packet
+								int newBufferSize = packet.header.packetLength;
+								client->buffer->_buffer.resize(newBufferSize);
+
+								// Serialize
+								client->buffer->writeIntBE(packet.header.packetLength);
+								client->buffer->writeIntBE(packet.header.msgID);
+								client->buffer->writeIntBE(packet.msgLength);
+								client->buffer->writeString(packet.msg);
+
+								// SENDING.............................................................. MAYBE ENCAPSULATE THIS
+
 								client->dataBuf.buf = client->buffer->_buffer.data();
 								client->dataBuf.len = client->buffer->_buffer.size();
-								// RecvBytes > 0, we got data
+
 								result = WSASend( //sending data right back to client
 									client->socket,
 									&(client->dataBuf),
@@ -390,36 +370,96 @@ int main(int argc, char** argv)
 									NULL,
 									NULL
 								);
-
 								if (SentBytes == SOCKET_ERROR)
 									printf("send error %d\n", WSAGetLastError());
 								else if (SentBytes == 0)
 									printf("Send result is 0\n");
 								else
 									printf("Successfully sent %d bytes!\n", SentBytes);
+
+								break;
 							}
+
+							//***************************************  MESSAGE ID: JOIN ROOM  ************************************************
+
+							case JoinRoom:
+							{
+								// Read in the rest of the packet, store room name
+								packet.roomLength = client->buffer->readIntBE();
+								packet.roomname = client->buffer->readString(packet.roomLength);
+
+								// New room
+								if (clientsInRooms.count(packet.roomname) == 0)
+								{
+									clientsInRooms[packet.roomname] = {};
+									clientsInRooms[packet.roomname].push_back(client);
+								}
+								// If room exists
+								else
+								{
+									clientsInRooms[packet.roomname].push_back(client);
+								}
+
+								// Preparing msg back to server
+								packet.msg = "SERVER: " + client->username + " has joined room " + packet.roomname;
+								packet.msgLength = packet.msg.length();
+								packetLength = 4 + 4 + 4 + packet.msgLength;
+								packet.header.packetLength = packetLength;
+								packet.header.msgID = JoinRoom;
+
+								// Clear the buffer
+								client->buffer->_buffer.clear();
+								client->buffer->readIndex = 0;
+								client->buffer->writeIndex = 0;
+
+								// Growing the buffer just enough to deal with packet
+								int newBufferSize = packet.header.packetLength;
+								client->buffer->_buffer.resize(newBufferSize);
+
+								// Serialize
+								client->buffer->writeIntBE(packet.header.packetLength);
+								client->buffer->writeIntBE(packet.header.msgID);
+								client->buffer->writeIntBE(packet.msgLength);
+								client->buffer->writeString(packet.msg);
+								// SENDING.............................................................. MAYBE ENCAPSULATE THIS
+
+								client->dataBuf.buf = client->buffer->_buffer.data();
+								client->dataBuf.len = client->buffer->_buffer.size();
+
+								// Sending everyone in the room that a user has joined that room
+								for (int i = 0; i < clientsInRooms[packet.roomname].size(); i++)
+								{
+									result = WSASend( //sending data right back to client
+										clientsInRooms[packet.roomname].at(i)->socket,
+										&(client->dataBuf),
+										1,
+										&SentBytes,
+										Flags,
+										NULL,
+										NULL
+									);
+									if (SentBytes == SOCKET_ERROR)
+										printf("send error %d\n", WSAGetLastError());
+									else if (SentBytes == 0)
+										printf("Send result is 0\n");
+									else
+										printf("Successfully sent %d bytes!\n", SentBytes);
+								}
+
+							//default:
+								break;
+							}
+							//printf("The value received is: %d\n", value);
+
+							default:
+								break;
+//----------------------------------------    Send   ------------------------------------------------
+							}
+							
 						}
 					}
-					//*************************************  MsgID: JOIN ROOM  *********************************************
-					case JoinRoom:
-					{
-						//std::vector<ClientInfo*> clientSockets;
-						//// map[string roomname][vector of client info]
-						//std::map<std::string, std::vector<ClientInfo*>> clientsInRooms;
-					}
-					default:
-						break;
-					}
-					//printf("The value received is: %d\n", value);
-
-
-
-
-
 				}
 			}
-
-		
 	}
 
 	// #6 close
