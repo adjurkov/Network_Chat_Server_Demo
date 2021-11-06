@@ -18,20 +18,24 @@
 #define DEFAULT_BUFLEN 512						// Default buffer length of our buffer in characters
 #define DEFAULT_PORT "5150"	                    // Default port
 #define SERVER "127.0.0.1"						// The IP of our server  
+SOCKET connectSocket = INVALID_SOCKET;		    // Socket used to connect to the server
 sPacket packet;                                 // Packet structure and protocol manager
+int result;									    // Results of any commands used
 
+bool quit = false;                              // Flag set to true when user presses ESC key
+bool isConnected = false;
+std::vector<char> userMessage;                  // User input stored as a vector
+cBuffer buffer(4);                              // Buffer of data
+bool nameIsSet = false;
 
-int main(int argc, char** argv)
+int init()
 {
-	int result;									// Results of any commands used
 	WSADATA wsaData;							// Contains Winsock data
-	SOCKET connectSocket = INVALID_SOCKET;		// Socket used to connect to the server
 	struct addrinfo* infoResult = NULL;			// Holds the address information of server
 	struct addrinfo* ptr = NULL;
 	struct addrinfo hints;
 
-	
-//----------------------------------------   Winsock Initialization   ------------------------------------------------
+	//----------------------------------------   Winsock Initialization   ------------------------------------------------
 
 	result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (result != 0)
@@ -69,10 +73,26 @@ int main(int argc, char** argv)
 			return 1;
 		}
 
+		// Non-blocking
+		DWORD NonBlock = 1;
+		result = ioctlsocket(connectSocket, FIONBIO, &NonBlock);
+		if (result == SOCKET_ERROR)
+		{
+			printf("ioctlsocket() failed with error %d\n", WSAGetLastError());
+			closesocket(connectSocket);
+			WSACleanup();
+			return 1;
+		}
+		printf("ioctlsocket() was successful!\n");
+
 		// Connect to server
 		result = connect(connectSocket, ptr->ai_addr, (int)ptr->ai_addrlen);
 		if (result == SOCKET_ERROR)
 		{
+			if (WSAGetLastError() == WSAEWOULDBLOCK)
+			{
+				break;
+			}
 			closesocket(connectSocket);
 			connectSocket = INVALID_SOCKET;
 			continue;
@@ -87,19 +107,111 @@ int main(int argc, char** argv)
 		WSACleanup();
 		return 1;
 	}
+	return 0;
+}
+
+int shutdown()
+{
+	// Shutdown the connection since no more data will be sent
+	result = shutdown(connectSocket, SD_SEND);
+	if (result == SOCKET_ERROR)
+	{
+		printf("shutdown failed with error: %d\n", WSAGetLastError());
+		closesocket(connectSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	// Cleanup
+	closesocket(connectSocket);
+	WSACleanup();
+	return 0;
+}
+
+void consoleOutput(std::string message)
+{
+	printf("%s", message.c_str());
+	printf("\n");
+
+	buffer._buffer.clear();
+	buffer.readIndex = 0;
+	buffer.writeIndex = 0;
+}
+
+// Receive until the peer closes the connection
+int checkRecv()
+{
+	// Temporarily resizing the buffer 
+	buffer._buffer.resize(500);
+
+	result = recv(connectSocket, (buffer._buffer.data()), DEFAULT_BUFLEN, 0);
+	if (result == SOCKET_ERROR)
+	{
+		if (WSAGetLastError() == WSAEWOULDBLOCK)
+		{
+			// Ignore
+		}
+		else
+		{
+			printf("Recv failed with error: %d\n", WSAGetLastError());
+		}
+	}
+	else if (result > 0) // echo   
+	{
+		printf("Bytes received: %d\n", result);
+
+		// Resizing the buffer appropriately 
+		buffer._buffer.resize(result);
+
+		// Did we at least get the packet length?
+		if (buffer._buffer.size() >= 4)
+		{
+			int packetLength = buffer.readIntBE();
 
 
+			// Did we receive the whole buffer?
+			if (buffer._buffer.size() == packetLength)
+			{
+				// HERE I WILL HAVE SWITCH STATEMENTS FOR MSGIDS
+				// Deserialize the message, (then reset your buffer?)
+				int msgID = buffer.readIntBE();
+				int msgLength = buffer.readIntBE();
+				std::string message = buffer.readString(msgLength);
 
-	bool quit = false;
-	bool isConnected = false;
-	std::vector<char> userMessage;
-	cBuffer buffer(4);
-	sPacket packet;
-	bool nameIsSet = false;
+				consoleOutput(message);
+			}
+			else
+			{
+				printf("Didn't receive full message from server.");
+			}
+		}
+	}
+	else if (result == 0)
+	{
+		printf("Connection closed\n");
+	}
+	else
+	{
+		// tell the user there was an error
+		// shutdown properly
+	}
+	return 0;
+}
 
+int main(int argc, char** argv)
+{
+	// Initialize Winsock, setup connectSocket
+	result = init();
+	if (result != 0)
+	{
+		return result;
+	}
+	
 //----------------------------------------   Main Loop Begins ------------------------------------------------
 	while (!quit)
 	{
+		checkRecv();
+
 		// Key was hit
 		if (_kbhit())
 		{
@@ -133,7 +245,7 @@ int main(int argc, char** argv)
 				
 //----------------------------------------   Send Serialized Packet to Server   ------------------------------------------------
 
-				result = send(connectSocket, buffer._buffer.data(), buffer._buffer.size(), 0); 
+				result = send(connectSocket, buffer._buffer.data(), packet.header.packetLength, 0); 
 				if (result == SOCKET_ERROR)
 				{
 					printf("send failed with error: %d\n", WSAGetLastError());
@@ -142,18 +254,9 @@ int main(int argc, char** argv)
 					return 1;
 				}
 				printf("Bytes Sent: %ld\n", result);
-				isConnected = true;
-
-				//// Step #5 shutdown the connection since no more data will be sent
-				//result = shutdown(connectSocket, SD_SEND);
-				//if (result == SOCKET_ERROR)
-				//{
-				//	printf("shutdown failed with error: %d\n", WSAGetLastError());
-				//	closesocket(connectSocket);
-				//	WSACleanup();
-				//	return 1;
-				//}
+				//isConnected = true;
 			}
+
 			else
 			{
 				// If any other key pressed, store in userMessage
@@ -161,114 +264,13 @@ int main(int argc, char** argv)
 				userMessage.push_back(key);
 			}
 		}
-
-		if (isConnected)
-		{
-			isConnected = false;
-
-//-------------------------------------  Receive until the peer closes the connection  ------------------------------------------------
-		//	do {
-
-				// Temporarily resizing the buffer 
-				buffer._buffer.resize(500);
-
-				result = recv(connectSocket, buffer._buffer.data(), buffer._buffer.size(), 0);
-				if (result > 0) // echo   
-				{
-					printf("Bytes received: %d\n", result);
-
-					// Resizing the buffer appropriately 
-					buffer._buffer.resize(result);
-
-				// Did we at least get the packet length?
-				if (buffer._buffer.size() >= 4)
-				{
-					int packetLength = buffer.readIntBE();
-
-
-					// Did we receive the whole buffer?
-					if (buffer._buffer.size() == packetLength)
-					{
-						// HERE I WILL HAVE SWITCH STATEMENTS FOR MSGIDS
-						// Deserialize the message, (then reset your buffer?)
-						int msgID = buffer.readIntBE();
-
-						switch (msgID)
-						{
-//******************************************  MESSAGE ID: ACCEPTED USERNAME  **************************************************
-							case AcceptedUsername:
-							{
-								int msgLength = buffer.readIntBE();
-								std::string message = buffer.readString(msgLength);
-
-								// Print welcome message
-								printf("%s", message.c_str());
-								printf("\n");
-
-								buffer._buffer.clear();
-								buffer.readIndex = 0;
-								buffer.writeIndex = 0;
-
-								break;
-							}
-//******************************************  MESSAGE ID: JOIN ROOM  **************************************************
-							case JoinRoom:
-							{
-								int msgLength = buffer.readIntBE();
-								std::string message = buffer.readString(msgLength);
-
-								// Print welcome message
-								printf("%s", message.c_str());
-								printf("\n");
-
-								buffer._buffer.clear();
-								buffer.readIndex = 0;
-								buffer.writeIndex = 0;
-
-								break;
-							}
-						}
-
-					}
-					else
-					{
-						printf("Didn't receive full message from server.");
-					}
-				}
-				}
-				else if (result == 0)
-				{
-					printf("Connection closed\n");
-				}
-				else
-				{
-					printf("recv failed with error: %d\n", WSAGetLastError());
-				}
-
-
-	//		} while (result > 0);
-
-			// check recv
-			// int result = recv(...);
-			// if(result == SOCKETERROR) // since we're setting to be non-blockin on purpose, its not an error
-			//{
-			//	if (WSAGetLastError() == 10035)
-			//	{
-			//		// ignore this error
-			//	}
-			//	else
-			//	{
-			//		// tell the user there was an error
-			//		// shutdown properly
-			//	}
-			//}
-
-		}
 	}
 	
-	// Cleanup
-	closesocket(connectSocket);
-	WSACleanup();
+	result = shutdown(); 
+	if (result != 0)
+	{
+		return result;
+	}
 
 	system("pause");
 	return 0;
