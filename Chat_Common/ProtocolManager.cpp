@@ -110,7 +110,7 @@ void sPacket::SerializeUserCommand(sPacket& packet, std::vector<char> &userMessa
 		for (int i = 0; i < userMessage.size(); i++)
 			msg += userMessage.at(i);
 
-		packet.header.packetLength = 4 + 4 + 4 + packet.roomname.length() + 4 + msg.length();
+		packet.header.packetLength = 4 + 4 + 4 + msg.length();
 		packet.header.msgID = Broadcast;
 		packet.msg = msg;
 		packet.msgLength = msg.length();
@@ -118,8 +118,6 @@ void sPacket::SerializeUserCommand(sPacket& packet, std::vector<char> &userMessa
 		// Serialize
 		buffer.writeIntBE(packet.header.packetLength);
 		buffer.writeIntBE(packet.header.msgID);
-		buffer.writeIntBE(packet.roomLength);
-		buffer.writeString(packet.roomname);
 		buffer.writeIntBE(packet.msgLength);
 		buffer.writeString(packet.msg);
 	}

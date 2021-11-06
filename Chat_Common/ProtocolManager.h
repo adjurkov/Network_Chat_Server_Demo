@@ -10,13 +10,11 @@
 // Message ID Types
 enum
 {
-	// Client
 	JoinRoom = 1,
 	LeaveRoom = 2,
 	SetName = 3,
 	Broadcast = 4,
 
-	// Server
 	AcceptedUsername = 5,
 };
 

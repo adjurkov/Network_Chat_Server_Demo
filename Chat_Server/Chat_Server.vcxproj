@@ -152,9 +152,6 @@
     <ClCompile Include="ServerMain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="cTCPServer.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Chat_Common\Chat_Common.vcxproj">
       <Project>{42a97098-42e8-4586-9a42-7700c3998fb8}</Project>
     </ProjectReference>

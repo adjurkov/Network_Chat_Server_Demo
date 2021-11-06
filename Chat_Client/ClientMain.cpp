@@ -147,14 +147,8 @@ int checkRecv()
 	result = recv(connectSocket, (buffer._buffer.data()), DEFAULT_BUFLEN, 0);
 	if (result == SOCKET_ERROR)
 	{
-		if (WSAGetLastError() == WSAEWOULDBLOCK)
-		{
-			// Ignore
-		}
-		else
-		{
-			printf("Recv failed with error: %d\n", WSAGetLastError());
-		}
+		if (WSAGetLastError() == WSAEWOULDBLOCK){} // ignore 
+		else {printf("Recv failed with error: %d\n", WSAGetLastError());}
 	}
 	else if (result > 0) // echo   
 	{
