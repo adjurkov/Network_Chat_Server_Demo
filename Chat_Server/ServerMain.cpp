@@ -57,23 +57,33 @@ DWORD NonBlock = 1;
 
 void RemoveClient(int index)
 {
-	//client1.buffer.
 
-	clientSockets.erase(clientSockets.begin() + index);
-	//ClientInfo* client = ClientArray[index];
+	// Look through all room names that this client is a part of
+	for (std::map<std::string, std::vector<ClientInfo*>>::iterator iter = clientsInRooms.begin(); iter != clientsInRooms.end(); ++iter)
+	{
+		std::string roomNameKey = iter->first;
+
+		// Does the client exist in the current room?
+		std::vector<ClientInfo*>::iterator it;
+		it = std::find(iter->second.begin(), iter->second.end(), clientSockets.at(index));
+		if (it != iter->second.end())
+		{
+			// Found client in room. Remove them from room
+			iter->second.erase(std::remove(iter->second.begin(), iter->second.end(), clientSockets.at(index)), iter->second.end());
+		}
+	}
+
+	
 
 	closesocket(clientSockets.at(index)->socket);
+
+	
+
 	printf("Closing socket %d\n", (int)clientSockets.at(index)->socket);
 
-	//for (int clientIndex = index; clientIndex < TotalClients; clientIndex++)
-	//{
-	//	ClientArray[clientIndex] = ClientArray[clientIndex + 1];
-	//}
+	clientSockets.erase(clientSockets.begin() + index);
 
 	TotalClients--;
-
-	// We also need to cleanup the ClientInfo data
-	// TODO: Delete Client
 }
 
 int init()
@@ -199,20 +209,7 @@ int main(int argc, char** argv)
 
 		// Always look for connection attempts
 		// we need to read from this socket every loop
-		FD_SET(listenSocket, &ReadSet); // set listen socket into the readset which means we're reading from the listensocket
-
-		// every connected client we have, we're gonna add to the readset as well
-		// Set read notification for each socket.
-
-		// Adding all the client sockets to the readset for each room
-	/*	for (std::map<std::string, std::vector<ClientInfo*>>::iterator iter = clientsInRooms.begin(); iter != clientsInRooms.end(); ++iter)
-		{
-			std::string room = iter->first;
-			std::vector<ClientInfo*> clientInfo = iter->second;*/
-
-			//for (int i = 0; i < TotalClients; i++)
-
-		/*}*/
+		FD_SET(listenSocket, &ReadSet);
 
 		// Adding all the client sockets to the readset for each room
 		for (std::vector<ClientInfo*>::iterator iter = clientSockets.begin(); iter != clientSockets.end(); ++iter)
@@ -258,9 +255,6 @@ int main(int argc, char** argv)
 					info->buffer = new cBuffer;
 					info->buffer->_buffer.resize(500);
 
-					/*std::string serverLobby = "ServerLobby";*/
-					//std::vector<ClientInfo*> clientVec = clientsInRooms[serverLobby];
-
 					clientSockets.push_back(info);
 					TotalClients++;
 					printf("New client connected on socket %d\n", (int)acceptSocket);
@@ -281,9 +275,6 @@ int main(int argc, char** argv)
 
 					client->dataBuf.buf = client->buffer->_buffer.data();
 					client->dataBuf.len = client->buffer->_buffer.size();
-
-		/*			client->dataBuf.buf = (char*)client->buffer->_buffer.data();
-					client->dataBuf.len = client->buffer->_buffer.size();*/
 
 					DWORD Flags = 0;
 					result = WSARecv(
@@ -524,6 +515,63 @@ int main(int argc, char** argv)
 									}
 								}
 								
+								break;
+							}
+			//***************************************  MESSAGE ID: LEAVE ROOM  ************************************************
+							case LeaveRoom:
+							{
+								// Read in the rest of the packet, store room name
+								packet.roomLength = client->buffer->readIntBE();
+								packet.roomname = client->buffer->readString(packet.roomLength);
+
+								// Remove client from that room
+								clientsInRooms[packet.roomname].erase(remove(clientsInRooms[packet.roomname].begin(), clientsInRooms[packet.roomname].end(), client), clientsInRooms[packet.roomname].end());
+
+								// Preparing msg back to server
+								packet.msg = "SERVER: [" + client->username + "] has left room [" + packet.roomname + "]";
+								packet.msgLength = packet.msg.length();
+								packetLength = 4 + 4 + 4 + packet.msgLength;
+								packet.header.packetLength = packetLength;
+								packet.header.msgID = LeaveRoom;
+
+								// Clear the buffer
+								client->buffer->_buffer.clear();
+								client->buffer->readIndex = 0;
+								client->buffer->writeIndex = 0;
+
+								// Growing the buffer just enough to deal with packet
+								int newBufferSize = packet.header.packetLength;
+								client->buffer->_buffer.resize(newBufferSize);
+
+								// Serialize
+								client->buffer->writeIntBE(packet.header.packetLength);
+								client->buffer->writeIntBE(packet.header.msgID);
+								client->buffer->writeIntBE(packet.msgLength);
+								client->buffer->writeString(packet.msg);
+
+								// SENDING.............................................................. 
+								client->dataBuf.buf = client->buffer->_buffer.data();
+								client->dataBuf.len = client->buffer->_buffer.size();
+
+								// Sending everyone in the room that a user has left that room
+								for (int i = 0; i < clientsInRooms[packet.roomname].size(); i++)
+								{
+									result = WSASend( //sending data right back to client
+										clientsInRooms[packet.roomname].at(i)->socket,
+										&(client->dataBuf),
+										1,
+										&SentBytes,
+										Flags,
+										NULL,
+										NULL
+									);
+									if (SentBytes == SOCKET_ERROR)
+										printf("send error %d\n", WSAGetLastError());
+									else if (SentBytes == 0)
+										printf("Send result is 0\n");
+									else
+										printf("Successfully sent %d bytes!\n", SentBytes);
+								}
 								break;
 							}
 
